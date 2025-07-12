@@ -1,10 +1,31 @@
 import React from 'react';
 import { FaUser, FaQuestionCircle, FaComments, FaTrophy, FaCalendarAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { userService } from '../services/userService';
+import { Question } from '../services/questionService';
+import { Answer } from '../services/answerService';
 
 const Profile = () => {
   const { user } = useAuth();
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      
+      try {
+        const profile = await userService.getUserProfile(user.id);
+        setUserProfile(profile);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
   if (!user) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
@@ -16,45 +37,15 @@ const Profile = () => {
     );
   }
 
-  // Mock user stats
-  const userStats = {
-    questionsAsked: 12,
-    answersGiven: 28,
-    reputation: 156,
-    joinDate: '2024-01-01'
-  };
-
-  const recentQuestions = [
-    {
-      id: '1',
-      title: 'How to implement JWT authentication in React?',
-      votes: 12,
-      answers: 3,
-      views: 245
-    },
-    {
-      id: '2',
-      title: 'Best practices for MongoDB schema design?',
-      votes: 8,
-      answers: 5,
-      views: 189
-    }
-  ];
-
-  const recentAnswers = [
-    {
-      id: '1',
-      questionTitle: 'How to handle async/await in JavaScript?',
-      votes: 15,
-      isAccepted: true
-    },
-    {
-      id: '2',
-      questionTitle: 'CSS Grid vs Flexbox - When to use which?',
-      votes: 7,
-      isAccepted: false
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16">
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-black"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -71,7 +62,7 @@ const Profile = () => {
               <p className="text-gray-600">{user.email}</p>
               <div className="flex items-center space-x-1 mt-2 text-sm text-gray-500">
                 <FaCalendarAlt size={12} />
-                <span>Member since {new Date(userStats.joinDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                <span>Member since {new Date(userProfile?.user?.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
               </div>
             </div>
           </div>
@@ -81,19 +72,19 @@ const Profile = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-green-200 border-2 border-black p-6 text-center shadow-[6px_6px_0px_#000]">
             <FaQuestionCircle size={32} className="mx-auto mb-2 text-black" />
-            <div className="text-2xl font-bold text-black">{userStats.questionsAsked}</div>
+            <div className="text-2xl font-bold text-black">{userProfile?.user?.questionsAsked || 0}</div>
             <div className="text-sm text-gray-600">Questions Asked</div>
           </div>
           
           <div className="bg-blue-200 border-2 border-black p-6 text-center shadow-[6px_6px_0px_#000]">
             <FaComments size={32} className="mx-auto mb-2 text-black" />
-            <div className="text-2xl font-bold text-black">{userStats.answersGiven}</div>
+            <div className="text-2xl font-bold text-black">{userProfile?.user?.answersGiven || 0}</div>
             <div className="text-sm text-gray-600">Answers Given</div>
           </div>
           
           <div className="bg-yellow-200 border-2 border-black p-6 text-center shadow-[6px_6px_0px_#000]">
             <FaTrophy size={32} className="mx-auto mb-2 text-black" />
-            <div className="text-2xl font-bold text-black">{userStats.reputation}</div>
+            <div className="text-2xl font-bold text-black">{userProfile?.user?.reputation || 0}</div>
             <div className="text-sm text-gray-600">Reputation</div>
           </div>
           
@@ -112,14 +103,14 @@ const Profile = () => {
               <span>Recent Questions</span>
             </h2>
             
-            {recentQuestions.length > 0 ? (
+            {userProfile?.questions?.length > 0 ? (
               <div className="space-y-4">
-                {recentQuestions.map((question) => (
-                  <div key={question.id} className="border-2 border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+                {userProfile.questions.slice(0, 5).map((question: Question) => (
+                  <div key={question._id} className="border-2 border-gray-200 p-4 hover:bg-gray-50 transition-colors">
                     <h3 className="font-bold text-black mb-2">{question.title}</h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
                       <span>{question.votes} votes</span>
-                      <span>{question.answers} answers</span>
+                      <span>{question.answers?.length || 0} answers</span>
                       <span>{question.views} views</span>
                     </div>
                   </div>
@@ -137,11 +128,11 @@ const Profile = () => {
               <span>Recent Answers</span>
             </h2>
             
-            {recentAnswers.length > 0 ? (
+            {userProfile?.answers?.length > 0 ? (
               <div className="space-y-4">
-                {recentAnswers.map((answer) => (
-                  <div key={answer.id} className="border-2 border-gray-200 p-4 hover:bg-gray-50 transition-colors">
-                    <h3 className="font-bold text-black mb-2">{answer.questionTitle}</h3>
+                {userProfile.answers.slice(0, 5).map((answer: Answer & { question: { title: string } }) => (
+                  <div key={answer._id} className="border-2 border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+                    <h3 className="font-bold text-black mb-2">{answer.question?.title}</h3>
                     <div className="flex items-center space-x-4 text-sm">
                       <span className="text-gray-600">{answer.votes} votes</span>
                       {answer.isAccepted && (

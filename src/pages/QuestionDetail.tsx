@@ -3,85 +3,89 @@ import { useParams, Link } from 'react-router-dom';
 import { FaUser, FaCalendarAlt, FaEye, FaArrowUp, FaArrowDown, FaCheck, FaReply } from 'react-icons/fa';
 import RichTextEditor from '../components/RichTextEditor';
 import { useAuth } from '../context/AuthContext';
+import { questionService, Question } from '../services/questionService';
+import { answerService, Answer } from '../services/answerService';
 
 const QuestionDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
-  const [question, setQuestion] = useState(null);
-  const [answers, setAnswers] = useState([]);
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [answers, setAnswers] = useState<Answer[]>([]);
   const [newAnswer, setNewAnswer] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  // Mock data
-  const mockQuestion = {
-    _id: '1',
-    title: 'How to implement JWT authentication in React?',
-    content: '<p>I am trying to implement JWT authentication in my React application but facing issues with token storage and validation.</p><p>Here\'s what I\'ve tried so far:</p><ul><li>Storing token in localStorage</li><li>Using axios interceptors</li><li>Setting up protected routes</li></ul><p>But I\'m getting authentication errors. Can someone help me understand the proper way to implement this?</p>',
-    author: { name: 'John Doe', username: 'johndoe', id: 'user1' },
-    tags: ['react', 'jwt', 'authentication'],
-    createdAt: '2024-01-15T10:30:00Z',
-    views: 245,
-    votes: 12,
-    userVote: null // null, 'up', or 'down'
-  };
-
-  const mockAnswers = [
-    {
-      _id: 'ans1',
-      content: '<p>Here\'s a comprehensive approach to implementing JWT authentication in React:</p><h3>1. Token Storage</h3><p>Store your JWT token in httpOnly cookies instead of localStorage for better security:</p><pre><code>// Set cookie on login\ndocument.cookie = `token=${token}; httpOnly; secure; sameSite=strict`;</code></pre><h3>2. Axios Setup</h3><p>Configure axios interceptors to automatically include the token:</p><pre><code>axios.interceptors.request.use((config) => {\n  const token = getTokenFromCookie();\n  if (token) {\n    config.headers.Authorization = `Bearer ${token}`;\n  }\n  return config;\n});</code></pre>',
-      author: { name: 'Jane Smith', username: 'janesmith', id: 'user2' },
-      createdAt: '2024-01-15T14:20:00Z',
-      votes: 8,
-      userVote: null,
-      isAccepted: true
-    },
-    {
-      _id: 'ans2',
-      content: '<p>Another approach is to use React Context for managing authentication state:</p><pre><code>const AuthContext = createContext();\n\nconst AuthProvider = ({ children }) => {\n  const [user, setUser] = useState(null);\n  const [token, setToken] = useState(localStorage.getItem(\'token\'));\n\n  const login = async (credentials) => {\n    const response = await api.post(\'/login\', credentials);\n    setToken(response.data.token);\n    setUser(response.data.user);\n    localStorage.setItem(\'token\', response.data.token);\n  };\n\n  return (\n    <AuthContext.Provider value={{ user, token, login }}>\n      {children}\n    </AuthContext.Provider>\n  );\n};</code></pre>',
-      author: { name: 'Mike Johnson', username: 'mikej', id: 'user3' },
-      createdAt: '2024-01-15T16:45:00Z',
-      votes: 5,
-      userVote: null,
-      isAccepted: false
-    }
-  ];
 
   useEffect(() => {
-    const fetchQuestion = async () => {
+    const fetchQuestionAndAnswers = async () => {
+      if (!id) return;
+      
       setLoading(true);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setQuestion(mockQuestion);
-      setAnswers(mockAnswers);
-      setLoading(false);
+      setError('');
+      
+      try {
+        const [questionData, answersData] = await Promise.all([
+          questionService.getQuestion(id),
+          answerService.getAnswers(id)
+        ]);
+        
+        setQuestion(questionData);
+        setAnswers(answersData);
+      } catch (error) {
+        console.error('Error fetching question:', error);
+        setError('Failed to load question');
+      } finally {
+        setLoading(false);
+      }
     };
 
-    fetchQuestion();
+    fetchQuestionAndAnswers();
   }, [id]);
 
+  const getUserVote = (voters: any[], userId: string) => {
+    const vote = voters?.find(v => v.user === userId);
+    return vote?.vote || null;
+  };
   const handleVote = async (type: 'up' | 'down', targetType: 'question' | 'answer', targetId?: string) => {
     if (!user) {
       alert('Please login to vote');
       return;
     }
 
-    // Simulate API call
-    console.log(`Voting ${type} on ${targetType}`, targetId);
+    try {
+      if (targetType === 'question' && question) {
+        const { votes } = await questionService.voteQuestion(question._id, type);
+        setQuestion(prev => prev ? { ...prev, votes } : null);
+      } else if (targetType === 'answer' && targetId) {
+        const { votes } = await answerService.voteAnswer(targetId, type);
+        setAnswers(prev => prev.map(ans => 
+          ans._id === targetId ? { ...ans, votes } : ans
+        ));
+      }
+    } catch (error) {
+      console.error('Error voting:', error);
+      alert('Failed to vote. Please try again.');
+    }
   };
 
   const handleAcceptAnswer = async (answerId: string) => {
-    if (!user || user.id !== question?.author.id) {
+    if (!user || user.id !== question?.author._id) {
       alert('Only the question author can accept answers');
       return;
     }
 
-    // Simulate API call
-    console.log('Accepting answer:', answerId);
-    setAnswers(prev => prev.map(ans => ({
-      ...ans,
-      isAccepted: ans._id === answerId
-    })));
+    try {
+      await answerService.acceptAnswer(answerId);
+      setAnswers(prev => prev.map(ans => ({
+        ...ans,
+        isAccepted: ans._id === answerId
+      })));
+      setQuestion(prev => prev ? { ...prev, acceptedAnswer: answerId } : null);
+    } catch (error) {
+      console.error('Error accepting answer:', error);
+      alert('Failed to accept answer. Please try again.');
+    }
   };
 
   const handleSubmitAnswer = async (e: React.FormEvent) => {
@@ -100,24 +104,16 @@ const QuestionDetail = () => {
     setSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const answer = {
-        _id: `ans${Date.now()}`,
+      const answer = await answerService.createAnswer({
         content: newAnswer,
-        author: { name: user.name, username: user.username, id: user.id },
-        createdAt: new Date().toISOString(),
-        votes: 0,
-        userVote: null,
-        isAccepted: false
-      };
+        questionId: id!
+      });
       
       setAnswers(prev => [...prev, answer]);
       setNewAnswer('');
     } catch (error) {
       console.error('Error submitting answer:', error);
-      alert('Failed to submit answer');
+      alert(error.response?.data?.message || 'Failed to submit answer');
     } finally {
       setSubmitting(false);
     }
@@ -144,11 +140,13 @@ const QuestionDetail = () => {
     );
   }
 
-  if (!question) {
+  if (error || !question) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <div className="bg-red-400 border-4 border-black p-8 shadow-[8px_8px_0px_#000] max-w-md mx-auto">
-          <h2 className="text-2xl font-bold text-black mb-4">Question Not Found</h2>
+          <h2 className="text-2xl font-bold text-black mb-4">
+            {error || 'Question Not Found'}
+          </h2>
           <Link
             to="/questions"
             className="bg-yellow-400 text-black border-2 border-black px-6 py-3 font-bold shadow-[4px_4px_0px_#000] hover:shadow-[2px_2px_0px_#000] hover:-translate-y-0.5 hover:-translate-x-0.5 transition-all"
@@ -190,7 +188,7 @@ const QuestionDetail = () => {
               <button
                 onClick={() => handleVote('up', 'question')}
                 className={`p-2 border-2 border-black hover:bg-green-200 transition-colors ${
-                  question.userVote === 'up' ? 'bg-green-400' : 'bg-white'
+                  getUserVote(question.voters || [], user?.id || '') === 'up' ? 'bg-green-400' : 'bg-white'
                 }`}
               >
                 <FaArrowUp size={20} />
@@ -199,7 +197,7 @@ const QuestionDetail = () => {
               <button
                 onClick={() => handleVote('down', 'question')}
                 className={`p-2 border-2 border-black hover:bg-red-200 transition-colors ${
-                  question.userVote === 'down' ? 'bg-red-400' : 'bg-white'
+                  getUserVote(question.voters || [], user?.id || '') === 'down' ? 'bg-red-400' : 'bg-white'
                 }`}
               >
                 <FaArrowDown size={20} />
@@ -247,7 +245,7 @@ const QuestionDetail = () => {
                   <button
                     onClick={() => handleVote('up', 'answer', answer._id)}
                     className={`p-2 border-2 border-black hover:bg-green-200 transition-colors ${
-                      answer.userVote === 'up' ? 'bg-green-400' : 'bg-white'
+                      getUserVote(answer.voters || [], user?.id || '') === 'up' ? 'bg-green-400' : 'bg-white'
                     }`}
                   >
                     <FaArrowUp size={16} />
@@ -256,14 +254,14 @@ const QuestionDetail = () => {
                   <button
                     onClick={() => handleVote('down', 'answer', answer._id)}
                     className={`p-2 border-2 border-black hover:bg-red-200 transition-colors ${
-                      answer.userVote === 'down' ? 'bg-red-400' : 'bg-white'
+                      getUserVote(answer.voters || [], user?.id || '') === 'down' ? 'bg-red-400' : 'bg-white'
                     }`}
                   >
                     <FaArrowDown size={16} />
                   </button>
                   
                   {/* Accept Answer */}
-                  {user && user.id === question.author.id && (
+                  {user && user.id === question.author._id && (
                     <button
                       onClick={() => handleAcceptAnswer(answer._id)}
                       className={`p-2 border-2 border-black hover:bg-green-200 transition-colors ${

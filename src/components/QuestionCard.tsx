@@ -7,6 +7,7 @@ interface Question {
   title: string;
   content: string;
   author: {
+    _id?: string;
     name: string;
     username: string;
   };

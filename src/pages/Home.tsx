@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import QuestionCard from "../components/QuestionCard";
 import { FaSearch, FaStar, FaUsers, FaQuestionCircle, FaComments, FaEye } from "react-icons/fa";
+import { questionService, Question } from "../services/questionService";
 
 const HeroSection = () => (
   <section className="bg-amber-50 border-black pt-10">
@@ -117,66 +118,20 @@ const FinalCTASection = () => (
 );
 
 const Home = () => {
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Mock trending questions data
-  const mockQuestions = [
-    {
-      _id: '1',
-      title: 'How to implement JWT authentication in React?',
-      content: 'I am trying to implement JWT authentication in my React application but facing issues with token storage and validation.',
-      author: { name: 'John Doe', username: 'johndoe' },
-      tags: ['react', 'jwt', 'authentication'],
-      createdAt: '2024-01-15T10:30:00Z',
-      views: 245,
-      answers: 3,
-      votes: 12
-    },
-    {
-      _id: '2',
-      title: 'Best practices for MongoDB schema design?',
-      content: 'What are the best practices when designing schemas for MongoDB? Should I embed documents or use references?',
-      author: { name: 'Jane Smith', username: 'janesmith' },
-      tags: ['mongodb', 'database', 'schema'],
-      createdAt: '2024-01-14T15:45:00Z',
-      views: 189,
-      answers: 5,
-      votes: 8
-    },
-    {
-      _id: '3',
-      title: 'How to handle async/await in JavaScript?',
-      content: 'I am confused about how async/await works in JavaScript. Can someone explain with examples?',
-      author: { name: 'Mike Johnson', username: 'mikej' },
-      tags: ['javascript', 'async', 'promises'],
-      createdAt: '2024-01-13T09:20:00Z',
-      views: 156,
-      answers: 2,
-      votes: 15
-    },
-    {
-      _id: '4',
-      title: 'CSS Grid vs Flexbox - When to use which?',
-      content: 'I am learning CSS layout techniques. When should I use CSS Grid and when should I use Flexbox?',
-      author: { name: 'Sarah Wilson', username: 'sarahw' },
-      tags: ['css', 'grid', 'flexbox'],
-      createdAt: '2024-01-12T14:10:00Z',
-      views: 203,
-      answers: 4,
-      votes: 10
-    }
-  ];
 
   useEffect(() => {
-    // Simulate API call
     const fetchTrendingQuestions = async () => {
       setLoading(true);
       try {
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setQuestions(mockQuestions);
+        const { questions } = await questionService.getQuestions({
+          limit: 4,
+          sort: 'votes'
+        });
+        setQuestions(questions);
       } catch (err) {
         setError("Failed to load trending questions.");
         console.error(err);
@@ -220,7 +175,10 @@ const Home = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {questions.map((question) => (
-                  <QuestionCard key={question._id} question={question} />
+                  <QuestionCard key={question._id} question={{
+                    ...question,
+                    answers: question.answers?.length || 0
+                  }} />
                 ))}
               </div>
 

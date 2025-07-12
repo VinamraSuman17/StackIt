@@ -4,6 +4,7 @@ import Select from 'react-select';
 import RichTextEditor from '../components/RichTextEditor';
 import { useAuth } from '../context/AuthContext';
 import { FaQuestionCircle, FaTags, FaEdit } from 'react-icons/fa';
+import { questionService } from '../services/questionService';
 
 const AskQuestion = () => {
   const { user } = useAuth();
@@ -85,21 +86,16 @@ const AskQuestion = () => {
     setLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Here you would make actual API call
-      console.log({
+      await questionService.createQuestion({
         title,
-        description,
-        tags: selectedTags.map((tag: any) => tag.value),
-        author: user.id,
+        content: description,
+        tags: selectedTags.map((tag: any) => tag.value)
       });
       
       navigate('/questions');
     } catch (error) {
       console.error('Error posting question:', error);
-      alert('Failed to post question. Please try again.');
+      alert(error.response?.data?.message || 'Failed to post question. Please try again.');
     } finally {
       setLoading(false);
     }

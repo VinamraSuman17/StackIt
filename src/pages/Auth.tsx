@@ -2,16 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaUser, FaEnvelope, FaLock, FaUserPlus, FaSignInAlt } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
+import { authService } from '../services/authService';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -24,47 +27,36 @@ const Auth = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
 
     try {
       if (isLogin) {
-        // Login logic
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-        
-        // Mock user data
-        const userData = {
-          id: 'user123',
-          name: 'John Doe',
+        const { user, token } = await authService.login({
           email: formData.email,
-          username: 'johndoe'
-        };
-        
-        login(userData);
+          password: formData.password
+        });
+        login(user, token);
         navigate('/');
       } else {
-        // Register logic
         if (formData.password !== formData.confirmPassword) {
-          alert('Passwords do not match');
+          setError('Passwords do not match');
           setLoading(false);
           return;
         }
         
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-        
-        // Mock user data
-        const userData = {
-          id: 'user123',
+        const { user, token } = await authService.register({
           name: formData.name,
+          username: formData.username,
           email: formData.email,
-          username: formData.name.toLowerCase().replace(' ', '')
-        };
-        
-        login(userData);
+          password: formData.password
+        });
+        login(user, token);
         navigate('/');
       }
     } catch (error) {
       console.error('Auth error:', error);
-      alert('Authentication failed. Please try again.');
+      setError(error.response?.data?.message || 'Authentication failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -89,6 +81,12 @@ const Auth = () => {
             </p>
           </div>
 
+          {error && (
+            <div className="bg-red-400 border-2 border-black p-4 mb-6 shadow-[4px_4px_0px_#000]">
+              <p className="text-black font-bold">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
               <div>
@@ -102,6 +100,24 @@ const Auth = () => {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="Enter your full name"
+                  className="w-full p-3 border-2 border-black shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000] focus:-translate-y-0.5 focus:-translate-x-0.5 transition-all"
+                  required={!isLogin}
+                />
+              </div>
+            )}
+
+            {!isLogin && (
+              <div>
+                <label className="flex items-center space-x-2 text-sm font-bold text-black mb-2">
+                  <FaUser />
+                  <span>Username</span>
+                </label>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  placeholder="Choose a username"
                   className="w-full p-3 border-2 border-black shadow-[4px_4px_0px_#000] focus:shadow-[6px_6px_0px_#000] focus:-translate-y-0.5 focus:-translate-x-0.5 transition-all"
                   required={!isLogin}
                 />
