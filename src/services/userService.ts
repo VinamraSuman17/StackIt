@@ -1,7 +1,7 @@
 import api from './api';
-import { User } from './authService';
-import { Question } from './questionService';
-import { Answer } from './answerService';
+import type { User } from './authService';
+import type { Question } from './questionService';
+import type { Answer } from './answerService';
 
 export interface UserProfile {
   user: User;
