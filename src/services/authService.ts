@@ -1,13 +1,5 @@
 import api from './api';
 
-export interface User {
-  _id: string;
-  username: string;
-  email: string;
-  reputation: number;
-  createdAt: string;
-}
-
 export interface LoginData {
   email: string;
   password: string;
@@ -21,14 +13,16 @@ export interface RegisterData {
 }
 
 export interface User {
-  id: string;
+  id?: string;
+  _id?: string;
   name: string;
   email: string;
   username: string;
-  role: string;
+  role?: string;
   reputation?: number;
   questionsAsked?: number;
   answersGiven?: number;
+  createdAt?: string;
 }
 
 export interface AuthResponse {
