@@ -1,5 +1,13 @@
 import api from './api';
 
+export interface User {
+  _id: string;
+  username: string;
+  email: string;
+  reputation: number;
+  createdAt: string;
+}
+
 export interface LoginData {
   email: string;
   password: string;
