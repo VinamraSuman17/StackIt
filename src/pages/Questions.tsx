@@ -166,7 +166,7 @@ const Questions = () => {
                 Next
               </button>
             </div>
-          ))}
+          )}
         </>
       ) : (
         <div className="text-center py-16">
