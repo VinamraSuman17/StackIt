@@ -1,69 +1,61 @@
-# React + TypeScript + Vite
+# StackIt - A Minimal Q&A Forum Platform
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**StackIt** is a minimal question-and-answer platform designed for collaborative learning and structured knowledge sharing. It prioritizes a simple, user-friendly interface focused on the core functionality of a community-driven Q&A forum.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+##  User Roles
 
-## Expanding the ESLint configuration
+| Role   | Permissions |
+|--------|-------------|
+| Guest  | View all questions and answers. |
+| User   | Register, log in, post questions and answers, and vote on answers. |
+| Admin  | Moderate content, including questions and answers. |
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+---
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+##  Core Features
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+### 1. Ask Question
+Users can post new questions with the following components:
+- **Title**: A short, descriptive title for the question.
+- **Description**: A detailed explanation using a **rich text editor**.
+- **Tags**: Relevant tags to categorize the question (e.g., `React`, `JWT`).
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 2. Rich Text Editor
+Supports a variety of formatting options:
+- **Bold**, *Italic*, ~~Strikethrough~~
+- Numbered and Bulleted Lists
+- Emoji Insertion 
+- Hyperlink Insertion
+- Image Upload
+- Text Alignment (Left, Center, Right)
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 3. 💬 Answering Questions
+- Logged-in users can post answers to any question.
+- Uses the same rich text editor as questions.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### 4. Voting & Accepting Answers
+- Users can **upvote** or **downvote** answers.
+- The question author can **accept** one answer as the correct solution.
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+### 5. Tagging
+- All questions must include relevant **tags** to aid discoverability.
+
+### 6. Notification System
+- Notification icon (bell) in the navbar shows new activity.
+- Users receive notifications for:
+  - Answers to their questions.
+  - Comments on their answers.
+  - Mentions using `@username`.
+- Displays a count of unread notifications.
+- Clicking the icon opens a dropdown with recent notifications.
+
+---
+
+##  Authors
+
+- **Nishith Dubey** - [nishithrbd@gmail.com](mailto:nishithrbd@gmail.com)
+- **Vinamra Suman** - [vinamrasuman33@gmail.com](mailto:vinamrasuman33@gmail.com)
+- **Varun Porwal** - [varunporwal8035@gmail.com](mailto:varunporwal8035@gmail.com)
+- **Mayur Chouhan** - [mayurchouhan8055@gmail.com](mailto:mayurchouhan8055@gmail.com)
